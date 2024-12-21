@@ -85,12 +85,12 @@ namespace ks {
 
 			// クッション方向選択当たり判定
 			let dir = DIR.RIGHT;
-			const CUSHION_MARGIN = 20;
+			const CUSHION_MARGIN = CONST.BILLIARDS.TABLE.FRAME_THICKNESS + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS;
 			const offset = 2;
 			const cushionList = [
 				// 上
 				{
-					x: field.x + field.width / 2, y: field.y - CUSHION_MARGIN / 2 -offset,
+					x: field.x + field.width / 2, y: field.y - CUSHION_MARGIN / 2 - offset,
 					w: field.width, h: CUSHION_MARGIN,
 					onSelect: () => {
 						dir = DIR.TOP;
@@ -173,7 +173,7 @@ namespace ks {
 			};
 
 			const color = {
-				_0: 0x00ff00,
+				_0: 0xff00ff,
 				_1: 0x0000ff,
 			};
 
@@ -206,7 +206,6 @@ namespace ks {
 				}
 
 				if(end - start == 0) {
-					console.log("長さ0の点線引こうとした");
 					return;
 				}
 
@@ -236,24 +235,211 @@ namespace ks {
 				};
 			};
 
+			const drawBall = () => {
+				graphic.lineStyle(2, 0xffffff, 1);
+				graphic.fillStyle(0xffffff);
+				graphic.fillCircleShape(ball0.circle);
+
+				graphic.fillStyle(0xffff00);
+				graphic.fillCircleShape(ball1.circle);
+			};
+
+			const drawBg = () => {
+				graphic.fillStyle(0x5d8165);
+				const THICKNESS = CONST.BILLIARDS.TABLE.FRAME_THICKNESS + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS;
+				graphic.fillRect(
+					field.left - THICKNESS,
+					field.top - THICKNESS,
+					field.width + 2 * THICKNESS,
+					field.height + 2 * THICKNESS,
+				);
+			};
+
+			const drawPocket = () => {
+				graphic.fillStyle(0x0);
+
+				const list = [
+					// コーナー
+					{x: field.left  - CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.top    - CONST.BILLIARDS.POCKET.POS_OFFSET},
+					{x: field.right + CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.top    - CONST.BILLIARDS.POCKET.POS_OFFSET},
+					{x: field.left  - CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.bottom + CONST.BILLIARDS.POCKET.POS_OFFSET},
+					{x: field.right + CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.bottom + CONST.BILLIARDS.POCKET.POS_OFFSET},
+					// センター
+					{x: field.left  - CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.centerY},
+					{x: field.right + CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.centerY},
+				];
+
+				list.forEach(pos => {
+					graphic.fillCircle(pos.x, pos.y, CONST.BILLIARDS.POCKET.RADIUS);
+				});
+			};
+			const drawOutFrame = () => {
+				graphic.fillStyle(0x864a2b);
+				const offset = CONST.BILLIARDS.TABLE.FRAME_THICKNESS + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS;
+				// 上
+				graphic.fillRect(
+					field.left - offset,
+					field.top - offset,
+					field.width + offset * 2,
+					CONST.BILLIARDS.TABLE.FRAME_THICKNESS,
+				);
+				// 下
+				graphic.fillRect(
+					field.left - offset,
+					field.bottom + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+					field.width + offset * 2,
+					CONST.BILLIARDS.TABLE.FRAME_THICKNESS,
+				);
+				// 左
+				graphic.fillRect(
+					field.left - offset,
+					field.top - CONST.BILLIARDS.TABLE.FRAME_THICKNESS,
+					CONST.BILLIARDS.TABLE.FRAME_THICKNESS,
+					field.height + CONST.BILLIARDS.TABLE.FRAME_THICKNESS * 2,
+				);
+
+				// 右
+				graphic.fillRect(
+					field.right + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+					field.top - CONST.BILLIARDS.TABLE.FRAME_THICKNESS,
+					CONST.BILLIARDS.TABLE.FRAME_THICKNESS,
+					field.height + CONST.BILLIARDS.TABLE.FRAME_THICKNESS * 2,
+				);
+			};
+			const drawCushion = () => {
+				graphic.fillStyle(0xb2d235);
+
+				const polygonList = [
+					[
+						// 上
+						field.left,
+						field.top - CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.right,
+						field.top - CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.right - CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.top,
+						field.left + CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.top,
+					],
+					[
+						// 下
+						field.right - CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.bottom,
+						field.left + CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.bottom,
+						field.left,
+						field.bottom + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.right,
+						field.bottom + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+					],
+					[
+						// 右上
+						field.right + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.top,
+						field.right + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.centerY - CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+						field.right,
+						field.centerY - CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.right,
+						field.top + CONST.BILLIARDS.POCKET.ENTRANCE,
+					],
+
+					[
+						// 右下
+						field.right,
+						field.centerY + CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.right + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.centerY + CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+						field.right + CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.bottom,
+						field.right,
+						field.bottom - CONST.BILLIARDS.POCKET.ENTRANCE,
+					],
+					[
+						// 左上
+						field.left - CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.top,
+						field.left - CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.centerY - CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+						field.left,
+						field.centerY - CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.left,
+						field.top + CONST.BILLIARDS.POCKET.ENTRANCE,
+					],
+					[
+						// 左下
+						field.left,
+						field.centerY + CONST.BILLIARDS.POCKET.ENTRANCE,
+						field.left - CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.centerY + CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+						field.left - CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+						field.bottom,
+						field.left,
+						field.bottom - CONST.BILLIARDS.POCKET.ENTRANCE,
+					],
+				];
+
+				polygonList.forEach(points => {
+					const polygon = new Phaser.Geom.Polygon(points);
+					graphic.fillPoints(polygon.points, true);
+				})
+			};
+
+			const POINT_RADIUS = 2;
+			const drawPointMark = () => {
+				// 長クッション ポイントマーク
+				const _POINT_L = 8;
+
+				graphic.lineStyle(2, 0xffffff, 1);
+				graphic.fillStyle(0xffffff);
+
+				for(let i = 1; i < _POINT_L; ++i) {
+					if(i === _POINT_L/ 2) continue;
+
+					const y = field.top + i / _POINT_L * field.height;
+
+					graphic.fillCircle(field.left - CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN,
+						y, POINT_RADIUS);
+						graphic.fillCircle(field.right + CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN,
+						y, POINT_RADIUS);
+				}
+
+				// 短クッション
+				const _POINT_S = 4;
+				for(let i = 1; i < _POINT_S; ++i) {
+					const x = field.left + i / _POINT_S * field.width;
+
+					graphic.fillCircle(x,
+						field.top - CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN, POINT_RADIUS);
+						graphic.fillCircle(x,
+						field.bottom + CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN, POINT_RADIUS);
+				}
+			};
+			const drawSpot = () => {
+				graphic.lineStyle(2, 0xffffff, 1);
+				graphic.fillStyle(0xffffff);
+
+				const POINT = 4;
+				for(let i = 1; i < POINT; ++i) {
+					const y = field.top + i / POINT * field.height;
+					graphic.fillCircle(field.centerX, y, POINT_RADIUS);
+				}
+			};
+
 			const alpha = 0.5;
 			callbackDraw = () => {
-				// 当たり判定描画
 				graphic.clear();
-				graphic.lineStyle(1, 0x00ff00, alpha);
 
-				drawHitArea(ball0.hitArea);
-				drawHitArea(ball1.hitArea);
-				// graphic.strokeRectShape(ballArea);
+				// ビリヤード台描画
+				drawBg();
+				drawOutFrame();
+				drawCushion();
+				drawPocket();
+				drawPointMark();
+				drawSpot();
 
-				cushionHitList.forEach(area => drawHitArea(area));
-
-				// 台とボール描画
-				graphic.lineStyle(2, 0xffffff, 1);
-
-				graphic.strokeRectShape(field);
-				graphic.strokeCircleShape(ball0.circle);
-				graphic.strokeCircleShape(ball1.circle);
+				// ボール
+				drawBall();
 
 				// 移動ライン描画
 				graphic.lineStyle(2, 0xff0000);
@@ -279,8 +465,15 @@ namespace ks {
 					lineDot(false, ball1.circle.x, ball1.circle.y, ball1.circle.x, cushion.y); // 球からクッションに垂直な線
 					lineDot(true, ball1.circle.x, cushion.y, cushion.x, cushion.y); // クッション上の線
 				}
-			};
 
+				// 当たり判定描画
+				graphic.lineStyle(1, 0x00ff00, alpha);
+
+				drawHitArea(ball0.hitArea);
+				drawHitArea(ball1.hitArea);
+
+				cushionHitList.forEach(area => drawHitArea(area));
+			};
 			draw();
 		}
 	}

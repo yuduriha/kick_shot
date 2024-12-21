@@ -16,6 +16,9 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var ks;
 (function (ks) {
+    var ball_radius = 28.5;
+    var frame_thickness = 200;
+    var cushion_thickness = 70;
     var CONST = (function () {
         function CONST() {
         }
@@ -36,8 +39,16 @@ var ks;
             TABLE: {
                 LONG: 2540 * CONST.BILLIARDS_WORLD_SCALE,
                 SHORT: 1270 * CONST.BILLIARDS_WORLD_SCALE,
+                FRAME_THICKNESS: (frame_thickness - cushion_thickness) * CONST.BILLIARDS_WORLD_SCALE,
+                POINT_MARK_MARGIN: frame_thickness * 0.65 * CONST.BILLIARDS_WORLD_SCALE,
+                CUSHION_THICKNESS: cushion_thickness * CONST.BILLIARDS_WORLD_SCALE,
             },
-            BALL_RADIUS: 28.5 * CONST.BILLIARDS_WORLD_SCALE
+            BALL_RADIUS: ball_radius * CONST.BILLIARDS_WORLD_SCALE,
+            POCKET: {
+                ENTRANCE: 2 * ball_radius * 2.2 * CONST.BILLIARDS_WORLD_SCALE,
+                POS_OFFSET: 80 * CONST.BILLIARDS_WORLD_SCALE,
+                RADIUS: 70 * CONST.BILLIARDS_WORLD_SCALE,
+            },
         };
         return CONST;
     }());
@@ -109,7 +120,7 @@ var ks;
                 graphic.strokeRect(hit.x - ((_a = hit.input) === null || _a === void 0 ? void 0 : _a.hitArea.centerX), hit.y - ((_b = hit.input) === null || _b === void 0 ? void 0 : _b.hitArea.centerY), hit.width, hit.height);
             };
             var dir = DIR.RIGHT;
-            var CUSHION_MARGIN = 20;
+            var CUSHION_MARGIN = ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS;
             var offset = 2;
             var cushionList = [
                 {
@@ -184,7 +195,7 @@ var ks;
                 }
             };
             var color = {
-                _0: 0x00ff00,
+                _0: 0xff00ff,
                 _1: 0x0000ff,
             };
             var lineDot = function (isHorizon, x0, y0, x1, y1) {
@@ -212,7 +223,6 @@ var ks;
                     };
                 }
                 if (end - start == 0) {
-                    console.log("長さ0の点線引こうとした");
                     return;
                 }
                 var lineTo = end - start > 0 ? 1 : -1;
@@ -237,17 +247,147 @@ var ks;
                 }
                 ;
             };
+            var drawBall = function () {
+                graphic.lineStyle(2, 0xffffff, 1);
+                graphic.fillStyle(0xffffff);
+                graphic.fillCircleShape(ball0.circle);
+                graphic.fillStyle(0xffff00);
+                graphic.fillCircleShape(ball1.circle);
+            };
+            var drawBg = function () {
+                graphic.fillStyle(0x5d8165);
+                var THICKNESS = ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS;
+                graphic.fillRect(field.left - THICKNESS, field.top - THICKNESS, field.width + 2 * THICKNESS, field.height + 2 * THICKNESS);
+            };
+            var drawPocket = function () {
+                graphic.fillStyle(0x0);
+                var list = [
+                    { x: field.left - ks.CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.top - ks.CONST.BILLIARDS.POCKET.POS_OFFSET },
+                    { x: field.right + ks.CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.top - ks.CONST.BILLIARDS.POCKET.POS_OFFSET },
+                    { x: field.left - ks.CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.bottom + ks.CONST.BILLIARDS.POCKET.POS_OFFSET },
+                    { x: field.right + ks.CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.bottom + ks.CONST.BILLIARDS.POCKET.POS_OFFSET },
+                    { x: field.left - ks.CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.centerY },
+                    { x: field.right + ks.CONST.BILLIARDS.POCKET.POS_OFFSET, y: field.centerY },
+                ];
+                list.forEach(function (pos) {
+                    graphic.fillCircle(pos.x, pos.y, ks.CONST.BILLIARDS.POCKET.RADIUS);
+                });
+            };
+            var drawOutFrame = function () {
+                graphic.fillStyle(0x864a2b);
+                var offset = ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS;
+                graphic.fillRect(field.left - offset, field.top - offset, field.width + offset * 2, ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS);
+                graphic.fillRect(field.left - offset, field.bottom + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS, field.width + offset * 2, ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS);
+                graphic.fillRect(field.left - offset, field.top - ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS, ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS, field.height + ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS * 2);
+                graphic.fillRect(field.right + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS, field.top - ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS, ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS, field.height + ks.CONST.BILLIARDS.TABLE.FRAME_THICKNESS * 2);
+            };
+            var drawCushion = function () {
+                graphic.fillStyle(0xb2d235);
+                var polygonList = [
+                    [
+                        field.left,
+                        field.top - ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.right,
+                        field.top - ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.right - ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.top,
+                        field.left + ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.top,
+                    ],
+                    [
+                        field.right - ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.bottom,
+                        field.left + ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.bottom,
+                        field.left,
+                        field.bottom + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.right,
+                        field.bottom + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                    ],
+                    [
+                        field.right + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.top,
+                        field.right + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.centerY - ks.CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+                        field.right,
+                        field.centerY - ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.right,
+                        field.top + ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                    ],
+                    [
+                        field.right,
+                        field.centerY + ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.right + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.centerY + ks.CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+                        field.right + ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.bottom,
+                        field.right,
+                        field.bottom - ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                    ],
+                    [
+                        field.left - ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.top,
+                        field.left - ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.centerY - ks.CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+                        field.left,
+                        field.centerY - ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.left,
+                        field.top + ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                    ],
+                    [
+                        field.left,
+                        field.centerY + ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                        field.left - ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.centerY + ks.CONST.BILLIARDS.POCKET.ENTRANCE / 2,
+                        field.left - ks.CONST.BILLIARDS.TABLE.CUSHION_THICKNESS,
+                        field.bottom,
+                        field.left,
+                        field.bottom - ks.CONST.BILLIARDS.POCKET.ENTRANCE,
+                    ],
+                ];
+                polygonList.forEach(function (points) {
+                    var polygon = new Phaser.Geom.Polygon(points);
+                    graphic.fillPoints(polygon.points, true);
+                });
+            };
+            var POINT_RADIUS = 2;
+            var drawPointMark = function () {
+                var _POINT_L = 8;
+                graphic.lineStyle(2, 0xffffff, 1);
+                graphic.fillStyle(0xffffff);
+                for (var i = 1; i < _POINT_L; ++i) {
+                    if (i === _POINT_L / 2)
+                        continue;
+                    var y = field.top + i / _POINT_L * field.height;
+                    graphic.fillCircle(field.left - ks.CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN, y, POINT_RADIUS);
+                    graphic.fillCircle(field.right + ks.CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN, y, POINT_RADIUS);
+                }
+                var _POINT_S = 4;
+                for (var i = 1; i < _POINT_S; ++i) {
+                    var x = field.left + i / _POINT_S * field.width;
+                    graphic.fillCircle(x, field.top - ks.CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN, POINT_RADIUS);
+                    graphic.fillCircle(x, field.bottom + ks.CONST.BILLIARDS.TABLE.POINT_MARK_MARGIN, POINT_RADIUS);
+                }
+            };
+            var drawSpot = function () {
+                graphic.lineStyle(2, 0xffffff, 1);
+                graphic.fillStyle(0xffffff);
+                var POINT = 4;
+                for (var i = 1; i < POINT; ++i) {
+                    var y = field.top + i / POINT * field.height;
+                    graphic.fillCircle(field.centerX, y, POINT_RADIUS);
+                }
+            };
             var alpha = 0.5;
             callbackDraw = function () {
                 graphic.clear();
-                graphic.lineStyle(1, 0x00ff00, alpha);
-                drawHitArea(ball0.hitArea);
-                drawHitArea(ball1.hitArea);
-                cushionHitList.forEach(function (area) { return drawHitArea(area); });
-                graphic.lineStyle(2, 0xffffff, 1);
-                graphic.strokeRectShape(field);
-                graphic.strokeCircleShape(ball0.circle);
-                graphic.strokeCircleShape(ball1.circle);
+                drawBg();
+                drawOutFrame();
+                drawCushion();
+                drawPocket();
+                drawPointMark();
+                drawSpot();
+                drawBall();
                 graphic.lineStyle(2, 0xff0000);
                 var cushion = cushionPoint();
                 graphic.lineBetween(ball0.circle.x, ball0.circle.y, cushion.x, cushion.y);
@@ -268,6 +408,10 @@ var ks;
                     lineDot(false, ball1.circle.x, ball1.circle.y, ball1.circle.x, cushion.y);
                     lineDot(true, ball1.circle.x, cushion.y, cushion.x, cushion.y);
                 }
+                graphic.lineStyle(1, 0x00ff00, alpha);
+                drawHitArea(ball0.hitArea);
+                drawHitArea(ball1.hitArea);
+                cushionHitList.forEach(function (area) { return drawHitArea(area); });
             };
             draw();
         };
