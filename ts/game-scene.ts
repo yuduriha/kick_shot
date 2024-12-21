@@ -15,7 +15,6 @@ namespace ks {
 		}
 		create() {
 			const graphic = this.add.graphics();
-			const graphicHit = this.add.graphics();
 
 			// 台
 			const field = new Phaser.Geom.Rectangle(CONST.SCREEN_CENTER.x - CONST.BILLIARDS.TABLE.SHORT / 2,
@@ -81,7 +80,7 @@ namespace ks {
 			});
 
 			const drawHitArea = (hit: Phaser.GameObjects.Container) => {
-				graphicHit.strokeRect(hit.x - hit.input?.hitArea.centerX, hit.y - hit.input?.hitArea.centerY, hit.width, hit.height);
+				graphic.strokeRect(hit.x - hit.input?.hitArea.centerX, hit.y - hit.input?.hitArea.centerY, hit.width, hit.height);
 			};
 
 			// クッション方向選択当たり判定
@@ -137,7 +136,6 @@ namespace ks {
 				cushionHitList.push(hitArea);
 			});
 
-
 			// クッション位置計算
 			const cushionPoint = () => {
 				const _calcPoint = (p1: number, p2: number, linePos: number, q1: number, q2: number) => {
@@ -149,7 +147,6 @@ namespace ks {
 
 					return q1 + (q2 - q1) * ratio;
 				};
-
 
 				switch(dir) {
 					case DIR.RIGHT:
@@ -173,27 +170,86 @@ namespace ks {
 							y: field.bottom,
 						};
 				}
-				return {
-					x: 0,
-					y: 0,
-				}
 			};
 
+			const color = {
+				_0: 0x00ff00,
+				_1: 0x0000ff,
+			};
+
+			const lineDot = (isHorizon: boolean, x0: number, y0: number, x1: number, y1: number) => {
+				const DOT_LEN = 5; // 点線の長さ
+				const DOT_MARGIN = 2; // 点線の余白
+				let start, end;
+				let key : {
+					constant: ("x"|"y"),
+					constant_val: number,
+					move: string,
+				};
+
+				if(isHorizon) {
+					start = x0;
+					end = x1;
+					key = {
+						constant: "y",
+						constant_val: y0,
+						move: "x",
+					};
+				} else {
+					start = y0;
+					end = y1;
+					key = {
+						constant: "x",
+						constant_val: x0,
+						move: "y",
+					};
+				}
+
+				if(end - start == 0) {
+					console.log("長さ0の点線引こうとした");
+					return;
+				}
+
+				const lineTo = end - start > 0 ? 1 : -1;
+				let current = start;
+
+				while(1) {
+					const p0 = {
+						[key.constant]: key.constant_val,
+						[key.move]: current,
+					};
+
+					current += lineTo * DOT_LEN;
+
+					const p1 = {
+						[key.constant]: key.constant_val,
+						[key.move]: current,
+					};
+
+					current += lineTo * DOT_MARGIN;
+
+					if(Math.abs(end - start) > Math.abs(current - start)) {
+						graphic.lineBetween(p0.x, p0.y, p1.x, p1.y);
+					} else {
+						return;
+					}
+				};
+			};
+
+			const alpha = 0.5;
 			callbackDraw = () => {
 				// 当たり判定描画
-				graphicHit.clear();
-				graphicHit.setAlpha(0.5);
-				graphicHit.lineStyle(1, 0x00ff00);
+				graphic.clear();
+				graphic.lineStyle(1, 0x00ff00, alpha);
 
 				drawHitArea(ball0.hitArea);
 				drawHitArea(ball1.hitArea);
-				// graphicHit.strokeRectShape(ballArea);
+				// graphic.strokeRectShape(ballArea);
 
 				cushionHitList.forEach(area => drawHitArea(area));
 
 				// 台とボール描画
-				graphic.clear();
-				graphic.lineStyle(2, 0xffffff);
+				graphic.lineStyle(2, 0xffffff, 1);
 
 				graphic.strokeRectShape(field);
 				graphic.strokeCircleShape(ball0.circle);
@@ -204,12 +260,28 @@ namespace ks {
 				const cushion = cushionPoint();
 				graphic.lineBetween(ball0.circle.x, ball0.circle.y, cushion.x, cushion.y);
 				graphic.lineBetween(ball1.circle.x, ball1.circle.y, cushion.x, cushion.y);
+
+				// 補助線
+				if(dir === DIR.RIGHT || dir === DIR.LEFT) {
+					graphic.lineStyle(1, color._0, alpha);
+					lineDot(true, ball0.circle.x, ball0.circle.y, cushion.x, ball0.circle.y); // 球からクッションに垂直な線
+					lineDot(false, cushion.x, ball0.circle.y, cushion.x, cushion.y); // クッション上の線
+
+					graphic.lineStyle(1, color._1, alpha);
+					lineDot(true, ball1.circle.x, ball1.circle.y, cushion.x, ball1.circle.y); // 球からクッションに垂直な線
+					lineDot(false, cushion.x, ball1.circle.y, cushion.x, cushion.y); // クッション上の線
+				} else {
+					graphic.lineStyle(1, color._0, alpha);
+					lineDot(false, ball0.circle.x, ball0.circle.y, ball0.circle.x, cushion.y); // 球からクッションに垂直な線
+					lineDot(true, ball0.circle.x, cushion.y, cushion.x, cushion.y);
+
+					graphic.lineStyle(1, color._1, alpha);
+					lineDot(false, ball1.circle.x, ball1.circle.y, ball1.circle.x, cushion.y); // 球からクッションに垂直な線
+					lineDot(true, ball1.circle.x, cushion.y, cushion.x, cushion.y); // クッション上の線
+				}
 			};
 
 			draw();
-		}
-
-		update() {
 		}
 	}
 }

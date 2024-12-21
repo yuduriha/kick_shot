@@ -25,6 +25,7 @@ var ks;
         CONST.SCREEN = {
             width: 600,
             height: 800,
+            BG_COLOR: 0x555555
         };
         CONST.SCREEN_CENTER = {
             x: CONST.SCREEN.width / 2,
@@ -62,7 +63,6 @@ var ks;
         GameScene.prototype.create = function () {
             var _this = this;
             var graphic = this.add.graphics();
-            var graphicHit = this.add.graphics();
             var field = new Phaser.Geom.Rectangle(ks.CONST.SCREEN_CENTER.x - ks.CONST.BILLIARDS.TABLE.SHORT / 2, ks.CONST.SCREEN_CENTER.y - ks.CONST.BILLIARDS.TABLE.LONG / 2, ks.CONST.BILLIARDS.TABLE.SHORT, ks.CONST.BILLIARDS.TABLE.LONG);
             var ballArea = new Phaser.Geom.Rectangle(field.x + ks.CONST.BILLIARDS.BALL_RADIUS, field.y + ks.CONST.BILLIARDS.BALL_RADIUS, field.width - 2 * ks.CONST.BILLIARDS.BALL_RADIUS, field.height - 2 * ks.CONST.BILLIARDS.BALL_RADIUS);
             var randBallPos = function () {
@@ -106,7 +106,7 @@ var ks;
             });
             var drawHitArea = function (hit) {
                 var _a, _b;
-                graphicHit.strokeRect(hit.x - ((_a = hit.input) === null || _a === void 0 ? void 0 : _a.hitArea.centerX), hit.y - ((_b = hit.input) === null || _b === void 0 ? void 0 : _b.hitArea.centerY), hit.width, hit.height);
+                graphic.strokeRect(hit.x - ((_a = hit.input) === null || _a === void 0 ? void 0 : _a.hitArea.centerX), hit.y - ((_b = hit.input) === null || _b === void 0 ? void 0 : _b.hitArea.centerY), hit.width, hit.height);
             };
             var dir = DIR.RIGHT;
             var CUSHION_MARGIN = 20;
@@ -182,20 +182,69 @@ var ks;
                             y: field.bottom,
                         };
                 }
-                return {
-                    x: 0,
-                    y: 0,
-                };
             };
+            var color = {
+                _0: 0x00ff00,
+                _1: 0x0000ff,
+            };
+            var lineDot = function (isHorizon, x0, y0, x1, y1) {
+                var _a, _b;
+                var DOT_LEN = 5;
+                var DOT_MARGIN = 2;
+                var start, end;
+                var key;
+                if (isHorizon) {
+                    start = x0;
+                    end = x1;
+                    key = {
+                        constant: "y",
+                        constant_val: y0,
+                        move: "x",
+                    };
+                }
+                else {
+                    start = y0;
+                    end = y1;
+                    key = {
+                        constant: "x",
+                        constant_val: x0,
+                        move: "y",
+                    };
+                }
+                if (end - start == 0) {
+                    console.log("長さ0の点線引こうとした");
+                    return;
+                }
+                var lineTo = end - start > 0 ? 1 : -1;
+                var current = start;
+                while (1) {
+                    var p0 = (_a = {},
+                        _a[key.constant] = key.constant_val,
+                        _a[key.move] = current,
+                        _a);
+                    current += lineTo * DOT_LEN;
+                    var p1 = (_b = {},
+                        _b[key.constant] = key.constant_val,
+                        _b[key.move] = current,
+                        _b);
+                    current += lineTo * DOT_MARGIN;
+                    if (Math.abs(end - start) > Math.abs(current - start)) {
+                        graphic.lineBetween(p0.x, p0.y, p1.x, p1.y);
+                    }
+                    else {
+                        return;
+                    }
+                }
+                ;
+            };
+            var alpha = 0.5;
             callbackDraw = function () {
-                graphicHit.clear();
-                graphicHit.setAlpha(0.5);
-                graphicHit.lineStyle(1, 0x00ff00);
+                graphic.clear();
+                graphic.lineStyle(1, 0x00ff00, alpha);
                 drawHitArea(ball0.hitArea);
                 drawHitArea(ball1.hitArea);
                 cushionHitList.forEach(function (area) { return drawHitArea(area); });
-                graphic.clear();
-                graphic.lineStyle(2, 0xffffff);
+                graphic.lineStyle(2, 0xffffff, 1);
                 graphic.strokeRectShape(field);
                 graphic.strokeCircleShape(ball0.circle);
                 graphic.strokeCircleShape(ball1.circle);
@@ -203,10 +252,24 @@ var ks;
                 var cushion = cushionPoint();
                 graphic.lineBetween(ball0.circle.x, ball0.circle.y, cushion.x, cushion.y);
                 graphic.lineBetween(ball1.circle.x, ball1.circle.y, cushion.x, cushion.y);
+                if (dir === DIR.RIGHT || dir === DIR.LEFT) {
+                    graphic.lineStyle(1, color._0, alpha);
+                    lineDot(true, ball0.circle.x, ball0.circle.y, cushion.x, ball0.circle.y);
+                    lineDot(false, cushion.x, ball0.circle.y, cushion.x, cushion.y);
+                    graphic.lineStyle(1, color._1, alpha);
+                    lineDot(true, ball1.circle.x, ball1.circle.y, cushion.x, ball1.circle.y);
+                    lineDot(false, cushion.x, ball1.circle.y, cushion.x, cushion.y);
+                }
+                else {
+                    graphic.lineStyle(1, color._0, alpha);
+                    lineDot(false, ball0.circle.x, ball0.circle.y, ball0.circle.x, cushion.y);
+                    lineDot(true, ball0.circle.x, cushion.y, cushion.x, cushion.y);
+                    graphic.lineStyle(1, color._1, alpha);
+                    lineDot(false, ball1.circle.x, ball1.circle.y, ball1.circle.x, cushion.y);
+                    lineDot(true, ball1.circle.x, cushion.y, cushion.x, cushion.y);
+                }
             };
             draw();
-        };
-        GameScene.prototype.update = function () {
         };
         return GameScene;
     }(Phaser.Scene));
@@ -223,6 +286,7 @@ var ks;
             parent: 'phaser-canvas',
             width: ks.CONST.SCREEN.width,
             height: ks.CONST.SCREEN.height,
+            backgroundColor: ks.CONST.SCREEN.BG_COLOR,
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH

@@ -13,6 +13,7 @@ namespace ks {
 		static readonly SCREEN = {
 			width : 600,
 			height: 800,
+			BG_COLOR: 0x555555
 		};
 
 		/**
